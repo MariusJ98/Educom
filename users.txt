@@ -1,0 +1,3 @@
+marius@gmail.com|marius|1234
+jp@hotmail.com|jan peter|09091212
+michel@hotmail.com|michel|3456
