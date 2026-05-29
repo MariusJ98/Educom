@@ -1,0 +1,76 @@
+/* Styling for sheet */
+
+body{ /*Set page with, auto center */
+    width: 800px;
+    margin: auto;
+}
+
+.header{ /*Center title on page with font size 48px*/
+    text-align: center;
+    font-size: 48px;
+    text-transform: capitalize;
+}
+
+/* Navigation styling*/
+.menu {
+  list-style-type: none; /*Remove bullet points*/
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  
+}
+
+.menu li{
+    float: left;/*Float items next to each other*/
+}
+
+.menu li a{
+    display: block;
+    width: auto;
+    color: black;
+    background-color: powderblue;
+    text-align: center;
+    padding: 14px 15px;
+    text-decoration: none; /*Remove underline*/
+    border-style: solid; /*Add borders*/
+    border-color: black;
+    border-radius: 25px;
+    
+}
+
+.menu li a:hover{
+    background-color: lightskyblue;
+}
+
+ .menuBottomBar{
+    color: black;
+    margin-top: 30px;
+} 
+
+/* Text on page*/
+.paragraph{
+    font-size: 12px;
+    color: black;
+    background-color: white;
+}
+
+/*Contact form*/
+.contact_form{
+    width: 400px;
+}
+
+.form_error{
+    color: red;
+}
+
+.form_output{
+    font-size: 14px;
+    font-family: Cambria;
+}
+
+.footer{ /*footnote styling*/
+    color: white;
+    background-color: black;
+    font-size: 10px;
+    text-align: right;
+}
