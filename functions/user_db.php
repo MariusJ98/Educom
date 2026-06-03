@@ -6,17 +6,14 @@ $hostname = "localhost";
 $username = "root";
 $password = "";
 $database = 'marius_webshop';
-  // Create connection
+// Create connection
 $conn = mysqli_connect($hostname, $username, $password, $database);
 
-if (!$conn)
-  {
-    die("Connection failed: " . mysqli_connect_error($conn));
-  }
-  else
-  {
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+} else {
     echo "Connected successfully <br>" . PHP_EOL;
-  }
+}
 
 
 //================================================================
@@ -29,7 +26,8 @@ function getRequest(): array
     $posted = $_SERVER['REQUEST_METHOD'] === 'POST';
     return [
         'posted' => $posted,
-        'page' => strtolower(getRequestVar($posted, 'page', 'contact'))
+        'page' => strtolower(getRequestVar($posted, 'page', 'home')),
+        'id' => getRequestVar(false, 'id', ''),
     ];
 }
 
@@ -47,22 +45,21 @@ function getRequestVar(bool $from_post, string $varname, string $default): strin
 // Verify email in user database
 function checkEmail(mysqli $conn, string $email): bool
 {
-    $email_verification_query = mysqli_prepare($conn, 'SELECT user_email FROM users WHERE user_email =?');
+    $email_verification_query = mysqli_prepare($conn, 'SELECT email FROM users WHERE email =?');
     mysqli_stmt_bind_param($email_verification_query, "s", $email);
     mysqli_stmt_execute($email_verification_query);
     $email_verification_result = mysqli_stmt_get_result($email_verification_query);
-    echo mysqli_num_rows($email_verification_result);
     return mysqli_fetch_assoc($email_verification_result) != false;
 }
 
-// save user to users.txt in email | name| password format
+// save user to users.txt in email | name | password format
 function saveUser(mysqli $conn, string $email, string $name, string $password): void
 {
-    //file_put_contents('users.txt', $email . '|' . $name . '|' . $hashed_password . PHP_EOL, FILE_APPEND);  // deprecated file saving
+    // hash password for safety, send it to a prepared query
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    $user_submission_query = mysqli_prepare($conn, 'INSERT INTO users (user_email, user_name, user_password) VALUES (?, ?, ?)');
+    $user_submission_query = mysqli_prepare($conn, 'INSERT INTO users (`email`, `name`, `password`) VALUES (?, ?, ?)');
     mysqli_stmt_bind_param($user_submission_query, "sss", $email, $name, $hashed_password);
-    mysqli_stmt_execute($user_submission_query); 
+    mysqli_stmt_execute($user_submission_query);
 }
 
 // Handle registration form validation
@@ -85,16 +82,15 @@ function handleRegistration(mysqli $conn, array $request, array $fields)
             if ($post_result['ok'] === True) {
                 saveUser($conn, $post_result['email'], $post_result['name'], $post_result['password']);
                 echo 'Registration successful!';
-            }
-            else {
+            } else {
                 showForm(
-                action: 'index.php',
-                page: $request['page'],
-                method: 'POST',
-                fields: $fields,
-                submit_caption: 'Sign Up!',
-                post_result: $post_result
-            );
+                    action: 'index.php',
+                    page: $request['page'],
+                    method: 'POST',
+                    fields: $fields,
+                    submit_caption: 'Sign Up!',
+                    post_result: $post_result
+                );
             }
         } else {
             showForm(
@@ -119,46 +115,63 @@ function handleRegistration(mysqli $conn, array $request, array $fields)
 //=================================================================
 // Handle verification of user email and password against database
 //=================================================================
-function handleUserLogin(string $email, string $password)
+function handleUserLogin(mysqli $conn, string $email, string $password)
 {
     $result = [
         'loginEmail_err' => false,
         'loginPassword_err' => false,
     ];
-    $lines = file('users.txt');
-    foreach ($lines as $line) {
-        [$stored_email, $stored_name, $stored_password] = explode('|', $line, 3);
-        if (strtolower($email) === strtolower($stored_email)) {
-            if ((trim($password)) === (trim($stored_password))) {
-                $name = $stored_name;
-                $result['loginEmail_err'] = false;
-                break;
-            } else {
-                $result['loginPassword_err'] = True;
-            }
-        } else {
-            $result['loginEmail_err'] = True;
-        }
+
+    // fetch from server
+    $verification_query = mysqli_prepare($conn, 'SELECT * FROM users WHERE email =?');
+    mysqli_stmt_bind_param($verification_query, "s", $email);
+    mysqli_stmt_execute($verification_query);
+    $verification_result = mysqli_stmt_get_result($verification_query);
+    $database_user = mysqli_fetch_assoc($verification_result);
+
+    // if fetch returns null or false ==> error message
+    if (!$database_user) {
+        $result['loginEmail_err'] = True;
+        echo '<h3>Wrong email</h3>';
+        return false;
     }
 
-    if ($result['loginEmail_err'] === false && $result['loginPassword_err'] === false) {
+    $password_result = password_verify($password, $database_user['password']);
+
+    // if password and email have matched, the result is true and the username is saved
+    // Set error array to false
+    if ($password_result === True) {
+        $name = $database_user['name'];
+        $result['loginEmail_err'] = false;
         $_SESSION['userName'] = $name;
         $_SESSION['loginMessage'] = 'Login succesful';
-        header('location: index.php?page=home');
-    } elseif ($result['loginEmail_err'] === false && $result['loginPassword_err'] === True) {
-        echo 'Wrong password';
-    } elseif ($result['loginEmail_err'] === True && $result['loginPassword_err'] === false) {
-        echo 'Wrong email';
+        header('location: index.php?page=shoppingcart');
+        return true;
+    } else {
+        $result['loginPassword_err'] = True;
+        echo '<h3>Wrong password</h3>';
+        return false;
     }
+
 }
 
 // Handle login forms of login page
-function handleLogin(array $request, array $fields)
+function handleLogin(mysqli $conn, array $request, array $fields)
 {
     if ($request['posted']) {
         $post_result = checkFields($fields);
         if ($post_result['ok']) {
-            handleUserLogin($post_result['email'], $post_result['password']);
+            $login_result = handleUserLogin($conn, $post_result['email'], $post_result['password']);
+            if ($login_result === false) {
+                showForm(
+                    action: 'index.php',
+                    page: $request['page'],
+                    method: 'POST',
+                    fields: $fields,
+                    submit_caption: 'Login',
+                    post_result: $post_result
+                );
+            }
         } else {
             showForm(
                 action: 'index.php',
@@ -215,7 +228,9 @@ function handleContactForm(array $request, array $fields)
     }
 }
 
-function logoutUser(){
+// logout users
+function logoutUser()
+{
     session_unset();
     $_SESSION['logoutMessage'] = 'Logout succesful';
 }

@@ -4,6 +4,8 @@
 //===============================================================
 require_once './functions/forms.php';
 require_once './functions/user_db.php';
+require_once './functions/store_db.php';
+
 
 function showPageContent($conn)
 {         // load page content based on page name
@@ -12,7 +14,7 @@ function showPageContent($conn)
     $page = $request['page'];
     $fields = getFieldPerPage($request['page']);
 
-    if ($page === 'logout'){  // this is not a good way to do the loading of pages, you should redirect to a user homepage
+    if ($page === 'logout') {  // this is not a good way to do the loading of pages, you should redirect to a user homepage
         logoutUser();
         header('location: index.php?page=home');
     }
@@ -25,20 +27,32 @@ function showPageContent($conn)
             showTextPerPage($page);
             break;
         case 'contact':             // Load contact form
-            showTextPerPage($page);
             handleContactForm($request, $fields);
+            showTextPerPage($page);
             break;
         case 'login':               // Open login page
+            handleLogin($conn, $request, $fields);
             showTextPerPage($page);
-            handleLogin($request, $fields);
             break;
         case 'register':            // open register page
-            showTextPerPage($page);
             handleRegistration($conn, $request, $fields);
+            showTextPerPage($page);
             break;
         case 'logout':              // logout
             // logoutUser();
-            break;            
+            break;
+        case 'shop':                // shop
+            handleAddToCart($request);
+            showShopContents($conn);
+            break;
+        case 'shoppingcart':        // shopping cart
+            handleRemoveFromCart($request);
+            handleEmptyCart($request);
+            showCart($conn);
+            break;
+        case 'product':
+            showProductDetails($conn, $request);
+            break;
         default:                    // if none match, redirect to home
             showTextPerPage('home');
 
@@ -90,7 +104,7 @@ function showHeaderContent($page)
 
 function importStyleSheet()
 {        // import css styling sheet
-    echo "<link rel='stylesheet' type='text/css' href='./styles.css' />";
+    echo "<link rel='stylesheet' type='text/css' href='./stylesheet/styles.css' />";
 }
 
 function endHeader()
@@ -113,15 +127,16 @@ function startBody()
     echo "<body>";
 }
 
-function showLoginStatus(){
-    if (isset($_SESSION['logoutMessage'])){
+function showLoginStatus()
+{
+    if (isset($_SESSION['logoutMessage'])) {
         echo $_SESSION['logoutMessage'];
         unset($_SESSION['logoutMessage']);
     }
-    if (isset($_SESSION['loginMessage'])){
-    echo $_SESSION['loginMessage'];
-    unset($_SESSION['loginMessage']);
-    }    
+    if (isset($_SESSION['loginMessage'])) {
+        echo $_SESSION['loginMessage'];
+        unset($_SESSION['loginMessage']);
+    }
 }
 
 function setMainPageStart()
@@ -174,16 +189,19 @@ function getMenuItems(): array
 
     if (isset($_SESSION['userName'])) {
         return [
-            'home'      => 'Home',
-            'about'     => 'About',
-            'contact'   => 'Contact',
-            'logout'    => 'Logout ' .$_SESSION['userName'] ,
+            'home' => 'Home',
+            'about' => 'About',
+            'contact' => 'Contact',
+            'shop' => 'Shop',
+            'shoppingcart' => 'Cart',
+            'logout' => 'Logout ' . $_SESSION['userName'],
         ];
     } else {
         return [
             'home' => 'Home',
             'about' => 'About',
             'contact' => 'Contact',
+            'shop' => 'Shop',
             'login' => 'Login',
             'register' => 'Register',
         ];
@@ -250,6 +268,7 @@ function showTextPerPage(string $page)
             break;
         default:
             echo '';
+            break;
     }
 
 }
