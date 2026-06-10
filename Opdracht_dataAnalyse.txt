@@ -1,0 +1,111 @@
+// Opgave 3.1.1
+SELECT * FROM mhl_cities;
+
+// opgave 3.1.2
+SELECT distinct(name) FROM mhl_cities;
+
+// opgave 3.1.3
+SELECT name, straat, huisnr, postcode FROM mhl_suppliers;
+
+// opgave 3.2.1
+SELECT name, straat, huisnr, postcode FROM mhl_suppliers WHERE city_id = 104;
+
+// opgave 3.2.2
+SELECT name, 
+        straat, 
+        huisnr, 
+        postcode 
+    FROM mhl_suppliers 
+    WHERE membertype IN (1,2,3,8);
+
+// opgave 3.2.3
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers 
+    WHERE city_id = 104 and p_city_id<>104 ;
+
+// opgave 3.2.4
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers 
+    WHERE city_id = 104 OR city_id = 172;
+
+// opgave 3.2.5
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE huisnr BETWEEN 10 AND 20;
+
+// opgave 3.2.6
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE huisnr BETWEEN 11 AND 19 OR huisnr >100;
+
+// opgave 3.2.7
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE name LIKE "\'t%";
+
+// 3.2.8
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE name LIKE "%handel";
+
+// 3.2.9
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE name LIKE "%groothandel%";
+
+// opgave 3.2.10
+SELECT name, 
+    straat, 
+    huisnr, 
+    postcode 
+    FROM mhl_suppliers
+    WHERE name REGEXP "&.*;";
+
+// opgave 3.3.1
+SELECT name FROM mhl_cities ORDER BY name;
+
+// opgave 3.3.2
+SELECT * FROM mhl_suppliers ORDER BY membertype, city_id, postcode;
+
+// opgave 3.3.3
+SELECT * FROM mhl_hitcount ORDER BY year ASC, month ASC, hitcount DESC;
+
+// opgave 4.1.1
+// amsterdam -> city_id:104, 
+select mhl_suppliers.name, 
+        mhl_suppliers.straat,
+        mhl_suppliers.huisnr,
+        mhl_suppliers.postcode
+    FROM mhl_suppliers 
+    WHERE city_id = 104;
+
+// opgave 4.1.2
+select mhl_suppliers.name, 
+        mhl_suppliers.straat,
+        mhl_suppliers.huisnr,
+        mhl_suppliers.postcode
+        mhl_cities.name AS plaatsnaam
+    FROM mhl_suppliers
+    JOIN mhl_cities ON  mhl_suppliers.city_id=mhl_cities.ID
+    WHERE city_id=104;
